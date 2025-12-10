@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A320 Cockpit Simulator - Interactive</title>
+    <title>A320 Cockpit Simulator - Airbus Style</title>
     <style>
         /* --- 1. GLOBAL SETTINGS --- */
         :root {
@@ -14,6 +14,8 @@
             --ab-amber: #ffaa00;   /* Warnings */
             --ab-dark: #0a0a0a;    /* Screen BG */
             --ab-panel: #2e2e2e;   /* Cockpit Panel Color */
+            --ab-stick: #444;      /* Side-stick color */
+            --ab-lever: #c0c0c0;   /* Throttle lever color */
         }
 
         body {
@@ -27,7 +29,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            user-select: none; /* Crucial for drag interactions */
+            user-select: none;
         }
 
         /* --- 2. LAYOUT --- */
@@ -54,7 +56,6 @@
             box-shadow: 0 0 15px #000;
         }
 
-        /* CRT Scanline Effect */
         .screen-bezel::after {
             content: " ";
             display: block;
@@ -66,236 +67,127 @@
             z-index: 99;
         }
 
-        /* --- PFD SPECIFICS --- */
-        #pfd-content {
-            width: 100%; height: 100%;
-            position: relative;
-        }
-
+        /* PFD Styles */
         .horizon-container {
-            position: absolute;
-            top: 0; left: 15%; width: 70%; height: 100%;
-            overflow: hidden;
-            border-left: 1px solid #333;
-            border-right: 1px solid #333;
+            position: absolute; top: 0; left: 15%; width: 70%; height: 100%; overflow: hidden; border-left: 1px solid #333; border-right: 1px solid #333;
         }
-
         .artificial-horizon {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 600px; height: 800px;
+            position: absolute; top: 50%; left: 50%; width: 600px; height: 800px;
             background: linear-gradient(to bottom, var(--ab-blue) 50%, var(--ab-brown) 50%);
-            transform: translate(-50%, -50%);
-            will-change: transform;
-            transition: transform 0.05s linear; /* Smooth movement */
+            transform: translate(-50%, -50%); transition: transform 0.05s linear;
         }
-
         .pitch-lines {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%; height: 100%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%;
         }
-        
         .p-line {
-            position: absolute;
-            left: 50%; transform: translateX(-50%);
-            background-color: white;
-            height: 2px;
-            width: 40px;
-            color: white; /* Pitch text */
-            font-size: 10px;
+            position: absolute; left: 50%; transform: translateX(-50%); background-color: white; height: 2px; width: 40px; color: white; font-size: 10px;
         }
-        /* Pitch scale: 10 deg = approx 80px */
         .p-10 { top: calc(50% - 80px); }
         .p-20 { top: calc(50% - 160px); width: 60px; }
         .p-n10 { top: calc(50% + 80px); }
         .p-n20 { top: calc(50% + 160px); width: 60px; }
-        
-        .p-line::after, .p-line::before {
-            content: attr(data-val);
-            position: absolute;
-            top: -7px;
-        }
+        .p-line::after, .p-line::before { content: attr(data-val); position: absolute; top: -7px; }
         .p-line::after { right: -15px; }
         .p-line::before { left: -15px; }
 
-
         .yellow-aircraft {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120px; height: 30px;
-            z-index: 20;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 120px; height: 30px; z-index: 20;
         }
         .y-left, .y-right { position: absolute; top: 12px; width: 40px; height: 6px; background: black; border: 2px solid #FFD700; }
         .y-left { left: 0; }
         .y-right { right: 0; }
         .y-dot { position: absolute; left: 56px; top: 10px; width: 8px; height: 8px; background: black; border: 2px solid #FFD700; border-radius: 50%; }
 
-        /* TAPES */
-        .tape {
-            position: absolute; top: 10%; bottom: 10%;
-            width: 45px; background: rgba(0,0,0,0.5);
-            overflow: hidden; z-index: 30;
-        }
+        /* TAPE STYLES */
+        .tape { position: absolute; top: 10%; bottom: 10%; width: 45px; background: rgba(0,0,0,0.5); overflow: hidden; z-index: 30; }
         .tape-l { left: 0; border-right: 1px solid white; }
         .tape-r { right: 0; border-left: 1px solid white; }
-        
-        .tape-strip {
-            position: absolute; left: 0; width: 100%;
-            display: flex; flex-direction: column-reverse;
-            transition: transform 0.1s linear;
-        }
-        .t-tick {
-            height: 39px;
-            border-top: 1px solid white;
-            text-align: right; font-size: 11px; padding-right: 2px; color: white;
-            box-sizing: border-box;
-        }
-        
-        .tape-window {
-            position: absolute; top: 50%; height: 30px; width: 55px;
-            background: black; border: 2px solid yellow;
-            color: var(--ab-green); font-size: 16px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center;
-            transform: translateY(-50%); z-index: 35;
-        }
+        .tape-strip { position: absolute; left: 0; width: 100%; display: flex; flex-direction: column-reverse; transition: transform 0.1s linear; }
+        .t-tick { height: 39px; border-top: 1px solid white; text-align: right; font-size: 11px; padding-right: 2px; color: white; box-sizing: border-box; }
+        .tape-window { position: absolute; top: 50%; height: 30px; width: 55px; background: black; border: 2px solid yellow; color: var(--ab-green); font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center; transform: translateY(-50%); z-index: 35; }
         .tw-l { left: 0; }
         .tw-r { right: 0; }
 
         /* --- ND SPECIFICS --- */
-        #nd-content {
-            background-color: #000;
-            width: 100%; height: 100%;
-            position: relative;
-        }
+        #nd-content { background-color: #000; width: 100%; height: 100%; position: relative; }
         
         .nd-rose {
-            position: absolute;
-            bottom: -80px; left: 50%;
-            width: 380px; height: 380px;
-            border: 2px solid white;
-            border-radius: 50%;
-            transform: translateX(-50%);
-            overflow: hidden;
+            position: absolute; bottom: -80px; left: 50%; width: 380px; height: 380px; border: 2px solid white; border-radius: 50%; transform: translateX(-50%); overflow: hidden;
         }
         
         .map-canvas {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 1000px; height: 1000px;
-            transform: translate(-50%, -50%);
-            transition: transform 0.1s linear; /* Apply transition here */
+            position: absolute; top: 50%; left: 50%; width: 1000px; height: 1000px; transform: translate(-50%, -50%); transition: transform 0.1s linear;
         }
         
         .nd-wpt {
-            position: absolute;
-            width: 10px; height: 10px;
-            border: 2px solid magenta;
-            transform: translate(-50%, -50%);
-            color: magenta;
-            font-size: 12px;
-            text-align: center;
+            position: absolute; width: 10px; height: 10px; border: 2px solid magenta; transform: translate(-50%, -50%); color: magenta; font-size: 12px; text-align: center;
         }
         .nd-wpt div { margin-top: 12px; white-space: nowrap; }
 
+        /* FIXED Aircraft Symbol - stays pointing up at the bottom */
         .nd-plane {
-            position: absolute;
-            bottom: 105px; left: 50%;
-            transform: translateX(-50%);
-            font-size: 32px; color: yellow;
-            z-index: 50;
-            text-shadow: 0 2px 0 black;
+            position: absolute; bottom: 105px; left: 50%; transform: translateX(-50%);
+            font-size: 32px; color: yellow; z-index: 50; text-shadow: 0 2px 0 black;
         }
         
-        .nd-data {
-            position: absolute; top: 10px; left: 10px;
-            color: var(--ab-green); font-size: 14px;
-        }
+        .nd-data { position: absolute; top: 10px; left: 10px; color: var(--ab-green); font-size: 14px; }
 
-        /* --- 4. THROTTLE QUADRANT --- */
+        /* --- 4. THROTTLE QUADRANT (Airbus Style) --- */
         .throttle-quadrant {
-            width: 140px;
-            height: 320px;
-            background: linear-gradient(to bottom, #222, #111);
-            border-radius: 10px;
-            border: 2px solid #555;
-            position: relative;
-            display: flex;
-            justify-content: center;
+            width: 140px; height: 320px; background: var(--ab-panel); border-radius: 10px; border: 2px solid #555; position: relative; display: flex; justify-content: center;
         }
-
-        /* The Markings (TOGA, FLX, CL, 0) */
         .tq-markings {
-            position: absolute;
-            left: 5px; top: 0; bottom: 0; width: 30px;
-            color: white; font-size: 10px; font-weight: bold;
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 20px 0; box-sizing: border-box;
-            z-index: 1;
-            pointer-events: none;
+            position: absolute; left: 5px; top: 0; bottom: 0; width: 30px; color: white; font-size: 10px; font-weight: bold; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; box-sizing: border-box; z-index: 1; pointer-events: none;
         }
         .tq-markings div { border-bottom: 1px solid #555; width: 100%; margin-bottom: 5px;}
 
-        /* The Track */
         .tq-track {
-            width: 60px;
-            height: 280px;
-            background: #000;
-            margin-top: 20px;
-            border-radius: 5px;
-            position: relative;
-            box-shadow: inset 0 0 10px #000;
+            width: 60px; height: 280px; background: #000; margin-top: 20px; border-radius: 5px; position: relative; box-shadow: inset 0 0 10px #000;
         }
 
-        /* The Levers (Interactive) */
+        /* The Airbus Grey Levers */
         #thrust-lever {
-            position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 60px;
-            background: linear-gradient(to right, #ccc, #eee, #ccc);
-            border-radius: 5px;
-            cursor: grab;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            touch-action: none;
-            transition: top 0.05s linear; /* Smooth visual update for throttle */
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: var(--ab-lever); /* Light Grey */
+            border-radius: 5px; cursor: grab; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; z-index: 10; touch-action: none; transition: top 0.05s linear;
         }
         
         #thrust-lever::after {
-            content: "";
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(to bottom, #d22, #900);
-            border: 2px solid #444;
+            content: ""; width: 50px; height: 50px; border-radius: 50%; background: #222; /* Darker center */ border: 2px solid #444;
         }
         
-        #thrust-lever:active { cursor: grabbing; background: #bbb; }
+        #thrust-lever:active { cursor: grabbing; background: var(--ab-lever); }
 
-        /* --- 5. JOYSTICK --- */
+        /* --- 5. SIDE-STICK (Airbus Style) --- */
         .controls-right {
             display: flex; flex-direction: column; align-items: center; gap: 10px;
+            padding-left: 20px; /* Separated from screens */
         }
         .joystick-base {
-            width: 120px; height: 120px;
-            background: radial-gradient(circle at 30% 30%, #444, #222);
-            border-radius: 50%;
+            width: 80px; height: 150px; /* Taller, narrower base */
+            background: var(--ab-panel);
+            border-radius: 10px 10px 0 0;
             border: 4px solid #111;
             position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
         }
         .joystick-handle {
-            width: 60px; height: 60px;
-            background: radial-gradient(circle at 30% 30%, #555, #111);
-            border-radius: 50%;
+            width: 40px; height: 40px;
+            background: var(--ab-stick); /* Dark grey stick */
+            border-radius: 5px;
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
             cursor: pointer;
             touch-action: none;
-            transition: transform 0.05s linear; /* Smooth visual return */
+            transition: transform 0.05s linear;
+        }
+        .joystick-handle::after {
+            content: '♦'; /* Simple grip detail */
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            color: #ddd; font-size: 20px; line-height: 40px; text-align: center;
         }
 
     </style>
@@ -311,7 +203,8 @@
                         <div class="pitch-lines">
                             <div class="p-line p-20" data-val="20"></div>
                             <div class="p-line p-10" data-val="10"></div>
-                            <div class="p-line" style="width: 100px;" data-val="0"></div> <div class="p-line p-n10" data-val="10"></div>
+                            <div class="p-line" style="width: 100px;" data-val="0"></div>
+                            <div class="p-line p-n10" data-val="10"></div>
                             <div class="p-line p-n20" data-val="20"></div>
                         </div>
                     </div>
@@ -324,14 +217,12 @@
                 </div>
 
                 <div class="tape tape-l">
-                    <div class="tape-strip" id="speed-strip">
-                        </div>
+                    <div class="tape-strip" id="speed-strip"></div>
                 </div>
                 <div class="tape-window tw-l" id="spd-val">180</div>
 
                 <div class="tape tape-r">
-                    <div class="tape-strip" id="alt-strip">
-                        </div>
+                    <div class="tape-strip" id="alt-strip"></div>
                 </div>
                 <div class="tape-window tw-r" id="alt-val">000</div>
                 
@@ -358,7 +249,6 @@
                     <div id="nd-gs">GS 180</div>
                     <div id="nd-tas">TAS 180</div>
                 </div>
-                <div class="nd-plane">✈</div>
                 
                 <div class="nd-rose">
                     <div class="map-canvas" id="nd-map">
@@ -368,6 +258,8 @@
                     <div style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: white;">W</div>
                     <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: white;">E</div>
                 </div>
+
+                <div class="nd-plane">✈</div>
             </div>
         </div>
 
@@ -383,11 +275,11 @@
     <script>
         /* --- SIMULATION CONSTANTS --- */
         const MAX_SPEED = 350; // Knots
-        const DRAG_FACTOR = 0.05; // Air resistance
-        const THRUST_POWER = 1.5; // Engine acceleration power
-        const GRAVITY_DRAG = 0.1; // Speed loss when climbing
+        const DRAG_FACTOR = 0.05; 
+        const THRUST_POWER = 1.5; 
+        const GRAVITY_DRAG = 0.1; 
 
-        /* --- INITIAL STATE (Requested) --- */
+        /* --- INITIAL STATE --- */
         let sim = {
             spd: 180, // Requested 180 kts
             alt: 0,   // Requested 0 ft
@@ -420,7 +312,6 @@
             tasText: document.getElementById('nd-tas')
         };
 
-        // Waypoints Data
         const wpts = [
             {n:'START', x:0, y:0},
             {n:'VOR1', x:0, y:-3000}, 
@@ -444,7 +335,7 @@
                 els.map.appendChild(el);
             });
 
-            // Set initial throttle position to match IDLE (bottom)
+            // Set initial throttle position to match IDLE
             els.thrLever.style.top = `${els.tqTrack.clientHeight - els.thrLever.clientHeight}px`;
 
             // Initial render
@@ -463,7 +354,7 @@
             }
         }
 
-        /* --- INTERACTION HANDLERS (FIXED) --- */
+        /* --- INTERACTION HANDLERS --- */
 
         function getClientCoords(e) {
             if (e.touches && e.touches.length > 0) {
@@ -472,16 +363,14 @@
             return e;
         }
 
-        // --- Joystick Handlers ---
+        // --- Stick Handlers ---
         function handleStickStart(e) {
-            e.preventDefault();
-            inputs.isDraggingStick = true;
+            e.preventDefault(); inputs.isDraggingStick = true;
         }
         function handleStickEnd() {
             inputs.isDraggingStick = false;
-            // Center Stick on release
             inputs.stickX = 0; inputs.stickY = 0;
-            updateStick(0, 0); // Visually center it
+            updateStick(0, 0); 
         }
 
         function handleStickMove(e) {
@@ -492,7 +381,7 @@
             const rect = els.joyBase.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
-            const maxR = 40;
+            const maxR = 30; /* Smaller travel range for side-stick realism */
             
             let dx = coords.clientX - cx;
             let dy = coords.clientY - cy;
@@ -502,8 +391,8 @@
                 dx = (dx/dist)*maxR; dy = (dy/dist)*maxR;
             }
             
-            inputs.stickX = dx/maxR; // -1 to 1
-            inputs.stickY = dy/maxR; // -1 to 1
+            inputs.stickX = dx/maxR; 
+            inputs.stickY = dy/maxR; 
             updateStick(dx, dy);
         }
 
@@ -511,7 +400,7 @@
             els.joyHandle.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
         }
         
-        // Setup Joystick Listeners
+        // Setup Stick Listeners
         els.joyHandle.addEventListener('mousedown', handleStickStart);
         els.joyHandle.addEventListener('touchstart', handleStickStart);
         window.addEventListener('mouseup', handleStickEnd);
@@ -521,12 +410,10 @@
 
         // --- Throttle Handlers ---
         function handleThrottleStart(e) {
-            e.preventDefault();
-            inputs.isDraggingThr = true;
+            e.preventDefault(); inputs.isDraggingThr = true;
         }
         function handleThrottleEnd() {
             inputs.isDraggingThr = false;
-            // No centering for throttle, it stays where it is set.
         }
 
         function handleThrottleMove(e) {
@@ -536,7 +423,6 @@
             const coords = getClientCoords(e);
             const rect = els.tqTrack.getBoundingClientRect();
             
-            // Calculate percentage from bottom (0%) to top (100%)
             let val = 1 - ((coords.clientY - rect.top) / rect.height);
             
             if(val < 0) val = 0;
@@ -544,7 +430,6 @@
             
             sim.throttle = val;
             
-            // Snap visual lever
             let px = (1-val) * (rect.height - els.thrLever.clientHeight);
             els.thrLever.style.top = `${px}px`;
         }
@@ -566,11 +451,11 @@
         }
 
         function updatePhysics() {
-            // Pitch & Bank follow stick
+            // Flight Controls
             sim.pitch += (inputs.stickY * -20 - sim.pitch) * 0.1;
             sim.bank += (inputs.stickX * 30 - sim.bank) * 0.1;
             
-            // Turn
+            // Heading Change
             if(Math.abs(sim.bank) > 2) {
                 sim.hdg += sim.bank * 0.05;
                 if(sim.hdg >= 360) sim.hdg -= 360;
@@ -588,13 +473,12 @@
             if(sim.spd < 0) sim.spd = 0;
             if(sim.spd > MAX_SPEED) sim.spd = MAX_SPEED;
             
-            // Altitude
-            let climbRate = sim.spd * (sim.pitch / 45); // Alt change based on speed and pitch
-            sim.alt += climbRate * 0.1; // Slowed down change for visual effect
+            // Altitude Change
+            let climbRate = sim.spd * (sim.pitch / 45);
+            sim.alt += climbRate * 0.1;
             if(sim.alt < 0) sim.alt = 0;
 
-            // Position (ND Movement)
-            // Knots to "World Pixels per Frame" conversion factor:
+            // Position (Map Movement)
             const moveSpeedFactor = 0.03; 
             let moveSpeed = sim.spd * moveSpeedFactor; 
             
@@ -610,11 +494,9 @@
             els.horizon.style.transform = `translate(-50%, calc(-50% + ${pY}px)) rotate(${-sim.bank}deg)`;
             
             // Tapes
-            // Speed: 20kts = 40px -> 2px per knot
             els.spdStrip.style.transform = `translateY(${sim.spd * 2}px)`;
             els.spdVal.innerText = Math.round(sim.spd).toString().padStart(3, '0');
             
-            // Alt: 100ft = 40px -> 0.4px per ft
             els.altStrip.style.transform = `translateY(${sim.alt * 0.4}px)`;
             els.altVal.innerText = Math.round(sim.alt).toString().padStart(5, '0').slice(0, 3);
         }
@@ -623,20 +505,18 @@
             els.gsText.innerText = `GS ${Math.round(sim.spd).toString().padStart(3, '0')}`;
             els.tasText.innerText = `TAS ${Math.round(sim.spd + (sim.alt/1000)*2).toString().padStart(3, '0')}`;
             
-            // Update Waypoints
+            // Map/Waypoint rendering (Fixed Aircraft, Rotating World)
             wpts.forEach(p => {
                 let el = document.getElementById(`wp-${p.n}`);
                 
-                // Relative pos to aircraft
                 let rx = p.x - sim.x;
                 let ry = p.y - sim.y;
                 
-                // Rotate for Head-Up display
+                // Rotation (World rotation)
                 let rad = (sim.hdg) * (Math.PI/180);
                 let screenX = rx * Math.cos(-rad) - ry * Math.sin(-rad);
                 let screenY = rx * Math.sin(-rad) + ry * Math.cos(-rad);
                 
-                // Scale (zoom) and Map Center (500, 500 on 1000x1000 canvas)
                 const scale = 0.1; 
                 const center = 500;
                 let finalX = center + screenX * scale;
