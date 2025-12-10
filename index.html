@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A320 Cockpit Panel Mockup</title>
+    <style>
+        /* --- General Layout and Colors --- */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #333;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .cockpit-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .display-unit {
+            width: 400px;
+            height: 400px;
+            background-color: #111;
+            border: 5px solid #000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- Primary Flight Display (PFD) Styling --- */
+        #pfd {
+            background-color: #111; /* Background for the frame */
+        }
+
+        .attitude-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .sky-ground-ref {
+            width: 100%;
+            height: 2000px; /* Large enough to move */
+            position: absolute;
+            top: 50%; /* Center initially */
+            left: 0;
+            transform-origin: center center;
+            transition: transform 0.1s linear; /* Smooth movement */
+        }
+
+        .sky {
+            background-color: #0465c0; /* Airbus Blue */
+            height: 50%;
+            width: 100%;
+        }
+
+        .ground {
+            background-color: #7d4411; /* Brown/Earth Tone */
+            height: 50%;
+            width: 100%;
+            border-top: 2px solid #fff; /* Horizon line */
+        }
+
+        .pitch-line {
+            position: absolute;
+            width: 50px;
+            height: 2px;
+            background-color: #fff;
+            left: calc(50% - 25px);
+            z-index: 10;
+        }
+
+        .pitch-marker {
+            position: absolute;
+            width: 50px;
+            height: 2px;
+            background-color: #fff;
+            left: calc(50% - 25px);
+            z-index: 10;
+        }
+
+        .pitch-marker::before {
+            content: attr(data-pitch);
+            position: absolute;
+            right: 55px;
+            top: -7px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .pitch-marker::after {
+            content: attr(data-pitch);
+            position: absolute;
+            left: 55px;
+            top: -7px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* Center reference marker (W-shape) */
+        .center-ref {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 30px;
+            border-bottom: 2px solid greenyellow;
+            border-right: 2px solid greenyellow;
+            border-left: 2px solid greenyellow;
+            z-index: 20;
+        }
+
+        .center-ref::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 15px;
+            background-color: greenyellow;
+        }
+        
+        /* Bank Scale */
+        .bank-scale {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 10px;
+            border-radius: 5px 5px 0 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+        }
+        .bank-scale-marker {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            height: 8px;
+            background-color: #fff;
+        }
+        .bank-scale-marker:nth-child(1) { left: 10%; transform: translateX(-50%); } /* 10 deg */
+        .bank-scale-marker:nth-child(2) { left: 25%; transform: translateX(-50%); height: 12px; } /* 20 deg */
+        .bank-scale-marker:nth-child(3) { left: 40%; transform: translateX(-50%); } /* 30 deg */
+        .bank-scale-marker:nth-child(4) { left: 50%; transform: translateX(-50%); height: 15px; background-color: greenyellow;} /* Center (0) */
+        .bank-scale-marker:nth-child(5) { left: 60%; transform: translateX(-50%); } /* 30 deg */
+        .bank-scale-marker:nth-child(6) { left: 75%; transform: translateX(-50%); height: 12px; } /* 20 deg */
+        .bank-scale-marker:nth-child(7) { left: 90%; transform: translateX(-50%); } /* 10 deg */
+        
+        .bank-indicator {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            width: 10px;
+            height: 10px;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            background-color: greenyellow;
+            z-index: 20;
+            transition: transform 0.1s linear;
+        }
+
+        /* Speed and Altitude Tapes */
+        .tape {
+            position: absolute;
+            top: 0;
+            width: 80px;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            color: greenyellow;
+            font-size: 20px;
+            text-align: right;
+            border: 1px solid #000;
+        }
+
+        #speed-tape {
+            left: 0;
+            border-right: none;
+        }
+
+        #alt-tape {
+            right: 0;
+            border-left: none;
+        }
+
+        .tape-readout {
+            position: absolute;
+            top: calc(50% - 15px);
+            height: 30px;
+            line-height: 30px;
+            background-color: #008800; /* Green box for current value */
+            color: #fff;
+            padding-right: 5px;
+            z-index: 25;
+            text-align: center;
+        }
+        #speed-readout { left: 0; width: 100%; }
+        #alt-readout { right: 0; width: 100%; }
+
+        .tape-values {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            transition: transform 0.1s linear;
+            text-align: right;
+            padding-right: 5px;
+        }
+        
+        .tape-value {
+            height: 30px;
+            line-height: 30px;
+        }
+
+        /* --- Navigation Display (ND) Styling --- */
+        #nd {
+            background-color: #000000;
+            border: 5px solid #000;
+            color: greenyellow;
+            position: relative;
+        }
+
+        .nd-map {
+            width: 1000px; /* Larger than container for panning */
+            height: 1000px;
+            background-color: #111;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s linear;
+            border-radius: 50%;
+            clip-path: circle(50% at 50% 50%);
+        }
+        
+        .nd-heading {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .nd-airplane {
+            position: absolute;
+            top: 75%; /* Simulating fixed aircraft position */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 30px;
+            background-color: yellow;
+            clip-path: polygon(50% 0%, 20% 100%, 50% 80%, 80% 100%);
+            z-index: 10;
+        }
+
+        .nd-waypoint {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: magenta;
+            border-radius: 50%;
+            box-shadow: 0 0 5px magenta;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Static waypoints for demo */
+        #wp1 { top: 30%; left: 40%; }
+        #wp2 { top: 60%; left: 70%; }
+        #wp3 { top: 10%; left: 80%; }
+        
+        /* --- Controls Styling --- */
+        .controls {
+            display: grid;
+            grid-template-areas: ". up ." "left center right" ". down .";
+            gap: 10px;
+            width: 150px;
+            padding: 20px;
+            background-color: #222;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .control-button {
+            padding: 15px;
+            background-color: #0055aa;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.1s;
+        }
+
+        .control-button:hover {
+            background-color: #0077cc;
+        }
+
+        .control-button:active {
+            background-color: #003366;
+        }
+
+        #btn-up { grid-area: up; }
+        #btn-down { grid-area: down; }
+        #btn-left { grid-area: left; }
+        #btn-right { grid-area: right; }
+        #btn-center { grid-area: center; visibility: hidden; } /* Placeholder to keep grid layout */
+    </style>
+</head>
+<body>
+
+    <h1 style="color: greenyellow;">A320 Cockpit Panel Mockup (PFD & ND)</h1>
+    
+    <div class="cockpit-panel">
+        
+        <div id="pfd" class="display-unit">
+            
+            <div class="attitude-indicator">
+                <div class="sky-ground-ref" id="sky-ground-ref" style="transform: translateY(-50%) rotateZ(0deg);">
+                    <div class="sky"></div>
+                    <div class="ground"></div>
+                    <div class="pitch-marker" data-pitch="+20" style="top: 300px;"></div>
+                    <div class="pitch-marker" data-pitch="+10" style="top: 400px;"></div>
+                    <div class="pitch-line" data-pitch="0" style="top: 500px; width: 300px; left: 50%; transform: translateX(-50%);"></div>
+                    <div class="pitch-marker" data-pitch="-10" style="top: 600px;"></div>
+                    <div class="pitch-marker" data-pitch="-20" style="top: 700px;"></div>
+                </div>
+
+                <div class="bank-scale">
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                    <div class="bank-scale-marker"></div>
+                </div>
+                <div class="bank-indicator" id="bank-indicator" style="transform: translateX(-50%) rotateZ(0deg);"></div>
+
+                <div class="center-ref"></div>
+            </div>
+
+            <div id="speed-tape" class="tape">
+                <div id="speed-readout" class="tape-readout">180</div>
+                <div class="tape-values" id="speed-values" style="transform: translateY(0px);">
+                    <div class="tape-value">200</div>
+                    <div class="tape-value">190</div>
+                    <div class="tape-value">180</div>
+                    <div class="tape-value">170</div>
+                    <div class="tape-value">160</div>
+                </div>
+                <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background-color: white; z-index: 25;"></div> </div>
+            
+            <div id="alt-tape" class="tape">
+                <div id="alt-readout" class="tape-readout">0</div>
+                <div class="tape-values" id="alt-values" style="transform: translateY(0px);">
+                    <div class="tape-value">100</div>
+                    <div class="tape-value">50</div>
+                    <div class="tape-value">0</div>
+                    <div class="tape-value">-50</div>
+                    <div class="tape-value">-100</div>
+                </div>
+                <div style="position: absolute; top: 50%; right: 0; width: 100%; height: 2px; background-color: white; z-index: 25;"></div> </div>
+
+        </div>
+
+        <div id="nd" class="display-unit">
+            <div class="nd-map" id="nd-map">
+                <div id="wp1" class="nd-waypoint"></div>
+                <div id="wp2" class="nd-waypoint"></div>
+                <div id="wp3" class="nd-waypoint"></div>
+            </div>
+            
+            <div class="nd-heading">HDG: 360°</div>
+            <div class="nd-airplane"></div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="btn-up" class="control-button" data-action="pitch-up">▲ PITCH UP</button>
+        <button id="btn-down" class="control-button" data-action="pitch-down">▼ PITCH DOWN</button>
+        <button id="btn-left" class="control-button" data-action="bank-left">◀ BANK LEFT</button>
+        <button id="btn-right" class="control-button" data-action="bank-right">▶ BANK RIGHT</button>
+        <div id="btn-center"></div>
+    </div>
+    
+    <script>
+        // --- Initial State ---
+        let currentPitch = 0; // degrees
+        let currentBank = 0;  // degrees
+        let ndPanX = 0;       // map shift X
+        let ndPanY = 0;       // map shift Y
+
+        const PITCH_STEP = 3;  // Pitch degrees per click
+        const BANK_STEP = 5;   // Bank degrees per click
+        const ND_PAN_STEP = 20; // Pixels to pan the ND map per click
+
+        const skyGroundRef = document.getElementById('sky-ground-ref');
+        const bankIndicator = document.getElementById('bank-indicator');
+        const ndMap = document.getElementById('nd-map');
+        const controlButtons = document.querySelectorAll('.control-button');
+
+        // Initial Tape Values (from HTML static content)
+        // const initialSpeed = 180; // kts
+        // const initialAltitude = 0; // ft
+
+        // --- Core Update Function ---
+        function updateDisplays() {
+            // 1. Update PFD Pitch and Bank
+            // Pitch: Moves the sky/ground reference (Y-axis translation)
+            // Note: 1 degree pitch = 10px in our simple scale (top: 500px is 0 deg, 400px is +10 deg, so 100px per 10 deg)
+            const pitchTranslate = -currentPitch * 10;
+            
+            // Apply both pitch and bank to the sky-ground-ref
+            // translateY(-50%) is to re-center the large element before applying pitch offset
+            skyGroundRef.style.transform = `translateY(calc(-50% + ${pitchTranslate}px)) rotateZ(${currentBank}deg)`;
+            
+            // Bank Indicator: Rotates the triangle indicator (X-axis rotation)
+            bankIndicator.style.transform = `translateX(-50%) rotateZ(${currentBank}deg)`;
+
+
+            // 2. Update ND Pan (Panning simulates movement over the map)
+            // Left/Right: Pans map horizontally
+            // Up/Down: Pans map vertically
+            ndMap.style.transform = `translate(calc(-50% + ${ndPanX}px), calc(-50% + ${ndPanY}px))`;
+        }
+
+        // --- Button Click Handler ---
+        controlButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const action = e.currentTarget.dataset.action;
+
+                switch (action) {
+                    // PFD Controls (Pitch and Bank)
+                    case 'pitch-up':
+                        currentPitch = Math.min(30, currentPitch + PITCH_STEP); // Limit +30 degrees
+                        ndPanY += ND_PAN_STEP; // ND Panning for 'forward' movement
+                        break;
+                    case 'pitch-down':
+                        currentPitch = Math.max(-15, currentPitch - PITCH_STEP); // Limit -15 degrees
+                        ndPanY -= ND_PAN_STEP; // ND Panning for 'backward' movement
+                        break;
+                    case 'bank-left':
+                        currentBank = Math.max(-45, currentBank - BANK_STEP); // Limit -45 degrees
+                        ndPanX -= ND_PAN_STEP; // ND Panning for 'left' movement
+                        break;
+                    case 'bank-right':
+                        currentBank = Math.min(45, currentBank + BANK_STEP); // Limit +45 degrees
+                        ndPanX += ND_PAN_STEP; // ND Panning for 'right' movement
+                        break;
+                }
+                
+                updateDisplays();
+            });
+        });
+
+        // Initialize displays to the starting state (180kts, 0ft, 0 pitch, 0 bank)
+        updateDisplays();
+
+    </script>
+</body>
+</html>
